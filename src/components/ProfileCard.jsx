@@ -1,5 +1,6 @@
 import { useState } from 'react'
-
+/*const ProfileCard = ({ name = '', group = '', technologies = [] }) => {}
+const ProfileCard = function(props) {}*/
 export default function ProfileCard({
   name = '',
   group = '',
