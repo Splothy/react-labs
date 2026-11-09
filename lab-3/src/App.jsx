@@ -1,3 +1,4 @@
+import MenuCategory from './components/MenuCategory.jsx'
 import { menu } from './data.js'
 
 export default function App() {
@@ -24,25 +25,7 @@ export default function App() {
           </tr>
         </thead>
         {menu.map((category) => (
-          <tbody key={category.id}>
-            <tr className="category">
-              <th colSpan={2} scope="rowgroup">
-                {category.name} ({category.items.length})
-              </th>
-            </tr>
-            {category.items.map((item) => (
-              <tr
-                key={item.id}
-                className={item.available ? 'item' : 'item unavailable'}
-              >
-                <th scope="row">
-                  {item.name}
-                  {!item.available && ' — немає'}
-                </th>
-                <td>{item.price} грн</td>
-              </tr>
-            ))}
-          </tbody>
+          <MenuCategory key={category.id} category={category} />
         ))}
       </table>
     </main>
