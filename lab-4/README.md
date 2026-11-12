@@ -30,11 +30,24 @@ https://denysmatsevych.github.io/web-development-2026/react/labs/lab-4/
 
 ```mermaid
 flowchart TD
-  App -->|"filterText, inStockOnly"| SearchBar
-  App -->|"menu, filterText, inStockOnly"| MenuTable
+  App -->|menu| FilterableMenuTable
+  FilterableMenuTable -->|"filterText, inStockOnly"| SearchBar
+  FilterableMenuTable -->|"menu, filterText, inStockOnly"| MenuTable
   App --> CafeInfo
   MenuTable -->|category| MenuCategory["MenuCategory × 3"]
   MenuCategory -->|item| MenuItemRow["MenuItemRow × 4, 3, 3"]
-  SearchBar -.->|"onFilterTextChange, onInStockOnlyChange"| App
-  App -.->|setItem| LocalStorage[("localStorage")]
+  SearchBar -.->|"onFilterTextChange, onInStockOnlyChange"| FilterableMenuTable
+  FilterableMenuTable -.->|setItem| LocalStorage[("localStorage")]
 ```
+
+## Колокація стану
+
+До: `App`, `SearchBar`, `MenuTable`, `MenuCategory`, `MenuItemRow`, `CafeInfo`.
+
+Після: `FilterableMenuTable`, `SearchBar`, `MenuTable`, `MenuCategory`, `MenuItemRow`.
+
+Це порівняння випливає зі структури коду: зміна стану повторно викликає
+компонент, якому він належить, і його дочірні компоненти. Перелік категорій
+і рядків залежить від результату пошуку. Після перенесення стану `App` і
+`CafeInfo` не рендеряться через зміну фільтрів. Перевірку підсвічування
+оновлень у React DevTools у цьому середовищі не виконано.
