@@ -1,4 +1,3 @@
-
 import { useLocalStorage } from '../hooks/useLocalStorage.js'
 
 export default function FavoriteButton({ productId, name }) {
