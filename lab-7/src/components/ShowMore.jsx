@@ -8,27 +8,24 @@
  *
  * Вимоги — у тестах tests/ShowMore.test.jsx.
  */
-import { useState } from 'react'
+import { useShowMore } from '../hooks/useShowMore.js'
 
-export default function ShowMore({ items, step, children }) {
-  const [visibleCount, setVisibleCount] = useState(step)
-
-  const visibleItems = items.slice(0, visibleCount)
-  const hiddenCount = Math.max(0, items.length - visibleCount)
+export default function ShowMore({ items, step = 3, children }) {
+  const { visibleItems, hiddenCount, showMore, collapse } = useShowMore(
+    items,
+    step,
+  )
   const nextCount = Math.min(step, hiddenCount)
 
-  function handleClick() {
-    if (hiddenCount > 0) {
-      setVisibleCount((previous) => previous + nextCount)
-    } else {
-      setVisibleCount(step)
-    }
-  }
   return (
     <>
       {children(visibleItems)}
       {items.length > step && (
-        <button type="button" className="show-more" onClick={handleClick}>
+        <button
+          type="button"
+          className="show-more"
+          onClick={hiddenCount > 0 ? showMore : collapse}
+        >
           {hiddenCount > 0 ? `Показати ще ${nextCount}` : 'Згорнути'}
         </button>
       )}
