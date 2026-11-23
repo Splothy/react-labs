@@ -16,7 +16,7 @@
  *
  * Вимоги — у тестах tests/Tabs.children.test.jsx і tests/Tabs.a11y.test.jsx.
  */
-import { createContext, use, useState } from 'react'
+import { createContext, use, useId, useState } from 'react'
 
 const TabsContext = createContext(null)
 
@@ -28,29 +28,69 @@ function useTabs() {
 
 export default function Tabs({ defaultValue, children }) {
   const [value, setValue] = useState(defaultValue)
+  const id = useId()
 
   return (
-    <TabsContext value={{ value, setValue }}>
+    <TabsContext value={{ value, setValue, id }}>
       <div className="tabs">{children}</div>
     </TabsContext>
   )
 }
 
 function TabsList({ children, ...props }) {
+  function handleKeyDown(event) {
+    const tabs = Array.from(
+      event.currentTarget.querySelectorAll('[role="tab"]'),
+    )
+    const index = tabs.indexOf(event.target)
+    if (index === -1) return
+
+    let nextIndex
+    switch (event.key) {
+      case 'ArrowRight':
+        nextIndex = (index + 1) % tabs.length
+        break
+      case 'ArrowLeft':
+        nextIndex = (index - 1 + tabs.length) % tabs.length
+        break
+      case 'Home':
+        nextIndex = 0
+        break
+      case 'End':
+        nextIndex = tabs.length - 1
+        break
+      default:
+        return
+    }
+    event.preventDefault()
+    tabs[nextIndex].focus()
+  }
+
   return (
-    <div className="tab-list" {...props}>
+    <div
+      className="tab-list"
+      {...props}
+      role="tablist"
+      onKeyDown={handleKeyDown}
+    >
       {children}
     </div>
   )
 }
 
 function TabsTab({ value, children }) {
-  const { value: selectedValue, setValue } = useTabs()
+  const { value: selectedValue, setValue, id } = useTabs()
+  const selected = selectedValue === value
   return (
     <button
       type="button"
-      className={selectedValue === value ? 'active' : ''}
+      role="tab"
+      id={`${id}-tab-${value}`}
+      aria-controls={`${id}-panel-${value}`}
+      aria-selected={selected}
+      tabIndex={selected ? 0 : -1}
       onClick={() => setValue(value)}
+      onFocus={() => setValue(value)}
     >
       {children}
     </button>
@@ -58,8 +98,18 @@ function TabsTab({ value, children }) {
 }
 
 function TabsPanel({ value, children }) {
-  const { value: selectedValue } = useTabs()
-  return <div hidden={selectedValue !== value}>{children}</div>
+  const { value: selectedValue, id } = useTabs()
+  return (
+    <div
+      role="tabpanel"
+      id={`${id}-panel-${value}`}
+      aria-labelledby={`${id}-tab-${value}`}
+      tabIndex={0}
+      hidden={selectedValue !== value}
+    >
+      {children}
+    </div>
+  )
 }
 
 Tabs.List = TabsList
