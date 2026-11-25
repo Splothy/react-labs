@@ -17,6 +17,7 @@
     "check:deps": "depcruise src --config .dependency-cruiser.cjs --output-type err-long"
   },
   "dependencies": {
+    "@coffee/cart": "file:./packages/cart",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
