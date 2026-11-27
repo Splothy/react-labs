@@ -29,32 +29,42 @@ const nextStatus = { new: 'brewing', brewing: 'ready', ready: 'served' }
 
 // Номер останнього замовлення. У стані його не тримаємо: номери лише
 // ростуть, а номер скасованого замовлення новому не дістається.
-let lastNumber = 0
 
 /** Початковий стан черги з вкладених замовлень, як їх повертає loadOrders(). */
 export function createInitialState(orders) {
-  lastNumber = Math.max(...orders.map((order) => order.number))
-  return { orders }
+  const lastNumber = Math.max(...orders.map((order) => order.number))
+  return { orders, lastNumber }
 }
 
 export function queueReducer(state, action) {
   switch (action.type) {
     case 'order_placed': {
-      lastNumber += 1
       const order = {
         ...action.order,
-        number: lastNumber,
+        number: state.lastNumber + 1,
         status: 'new',
         items: action.order.items.map((item) => ({ ...item, done: false })),
       }
-      return { ...state, orders: [...state.orders, order] }
+      return {
+        ...state,
+        lastNumber: state.lastNumber + 1,
+        orders: [...state.orders, order],
+      }
     }
-    case 'item_toggled': {
-      const order = state.orders.find((o) => o.id === action.orderId)
-      const item = order.items.find((i) => i.id === action.itemId)
-      item.done = !item.done
-      return { ...state, orders: [...state.orders] }
-    }
+    case 'item_toggled':
+      return {
+        ...state,
+        orders: state.orders.map((o) =>
+          o.id === action.orderId
+            ? {
+                ...o,
+                items: o.items.map((i) =>
+                  i.id === action.itemId ? { ...i, done: !i.done } : i,
+                ),
+              }
+            : o,
+        ),
+      }
     case 'order_advanced': {
       return {
         ...state,
@@ -65,11 +75,11 @@ export function queueReducer(state, action) {
         ),
       }
     }
-    case 'order_cancelled': {
-      const index = state.orders.findIndex((o) => o.id === action.orderId)
-      state.orders.splice(index, 1)
-      return { ...state, orders: [...state.orders] }
-    }
+    case 'order_cancelled':
+      return {
+        ...state,
+        orders: state.orders.filter((o) => o.id !== action.orderId),
+      }
     case 'customer_renamed': {
       const order = state.orders.find(
         (o) => o.customer.id === action.customerId,
