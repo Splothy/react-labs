@@ -1,4 +1,6 @@
+import { produce } from 'immer'
 import { defaultMilk } from '../data/menu.js'
+
 /**
  * Чернетка нового замовлення — стан форми «Нове замовлення»:
  *   { customerName: 'Оля', items: [{ id, drink, size, milk, syrups }] }
@@ -14,7 +16,7 @@ export const emptyDraft = Object.freeze({
 
 /**
  * Ред'юсер форми «Нове замовлення». Отримує чернетку й дію, повертає нову
- * чернетку.
+ * чернетку. Написано через produce з Immer (curried producer).
  *
  * Дії — що зробив бариста:
  *   { type: 'customer_changed', name }
@@ -35,65 +37,64 @@ export const emptyDraft = Object.freeze({
  *       надіслав замовлення: форма знову порожня
  *
  * Невідома дія — помилка, у тексті якої є назва дії.
- *
- * Поки що кидає помилку. Вимоги — у тестах tests/draftReducer.test.js і
- * tests/OrderComposer.test.jsx.
  */
-export function draftReducer(state, action) {
+export const draftReducer = produce((draft, action) => {
   switch (action.type) {
     case 'customer_changed':
-      return {
-        ...state,
-        customerName: action.name,
-      }
+      draft.customerName = action.name
+      break
+
     case 'drink_added':
-      return {
-        ...state,
-        items: [
-          ...state.items,
-          {
-            id: action.id,
-            drink: action.drink,
-            size: 'M',
-            milk: defaultMilk(action.drink),
-            syrups: [],
-          },
-        ],
+      draft.items.push({
+        id: action.id,
+        drink: action.drink,
+        size: 'M',
+        milk: defaultMilk(action.drink),
+        syrups: [],
+      })
+      break
+
+    case 'size_chosen': {
+      const item = draft.items.find((i) => i.id === action.itemId)
+      if (item) {
+        item.size = action.size
       }
-    case 'size_chosen':
-      return {
-        ...state,
-        items: state.items.map((item) =>
-          item.id === action.itemId ? { ...item, size: action.size } : item,
-        ),
+      break
+    }
+
+    case 'milk_chosen': {
+      const item = draft.items.find((i) => i.id === action.itemId)
+      if (item) {
+        item.milk = action.milk
       }
-    case 'milk_chosen':
-      return {
-        ...state,
-        items: state.items.map((item) =>
-          item.id === action.itemId ? { ...item, milk: action.milk } : item,
-        ),
+      break
+    }
+
+    case 'syrup_toggled': {
+      const item = draft.items.find((i) => i.id === action.itemId)
+      if (item) {
+        const index = item.syrups.indexOf(action.syrup)
+        if (index !== -1) {
+          item.syrups.splice(index, 1)
+        } else {
+          item.syrups.push(action.syrup)
+        }
       }
-    case 'syrup_toggled':
-      return {
-        ...state,
-        items: state.items.map((item) => {
-          if (item.id !== action.itemId) return item
-          const hasSyrup = item.syrups.includes(action.syrup)
-          const newSyrups = hasSyrup
-            ? item.syrups.filter((s) => s !== action.syrup)
-            : [...item.syrups, action.syrup]
-          return { ...item, syrups: newSyrups }
-        }),
+      break
+    }
+
+    case 'item_removed': {
+      const index = draft.items.findIndex((i) => i.id === action.itemId)
+      if (index !== -1) {
+        draft.items.splice(index, 1)
       }
-    case 'item_removed':
-      return {
-        ...state,
-        items: state.items.filter((item) => item.id !== action.itemId),
-      }
+      break
+    }
+
     case 'draft_cleared':
       return emptyDraft
+
     default:
-      throw new Error(`Невідома дія ${action.type}`)
+      throw new Error(`Unknown action: ${action.type}`)
   }
-}
+})
