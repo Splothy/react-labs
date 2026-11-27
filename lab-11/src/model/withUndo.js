@@ -25,11 +25,58 @@
  * Поки що кидає помилку. Вимоги — у тестах tests/withUndo.test.js і
  * tests/HistoryButtons.test.jsx.
  */
-export function withUndo(/* reducer, limit = 20 */) {
-  throw new Error('Not implemented: withUndo')
+export function withUndo(reducer, limit = 20) {
+  return function undoableReducer(history, action) {
+    if (action.type === 'undo') {
+      if (history.past.length === 0) return history
+
+      const previous = history.past[history.past.length - 1]
+      const newPast = history.past.slice(0, -1)
+      const newFuture = [history.present, ...history.future]
+
+      return {
+        past: newPast,
+        present: previous,
+        future: newFuture,
+      }
+    }
+
+    if (action.type === 'redo') {
+      if (history.future.length === 0) return history
+
+      const next = history.future[0]
+      const newFuture = history.future.slice(1)
+      const newPast = [...history.past, history.present]
+
+      return {
+        past: newPast,
+        present: next,
+        future: newFuture,
+      }
+    }
+
+    const nextPresent = reducer(history.present, action)
+    if (nextPresent === history.present) {
+      return history
+    }
+
+    const newPast = [...history.past, history.present]
+    return {
+      past:
+        newPast.length > limit
+          ? newPast.slice(newPast.length - limit)
+          : newPast,
+      present: nextPresent,
+      future: [],
+    }
+  }
 }
 
 /** Історія, з якої починають: present і порожні past та future. */
-export function createHistory(/* present */) {
-  throw new Error('Not implemented: createHistory')
+export function createHistory(present) {
+  return {
+    past: [],
+    present,
+    future: [],
+  }
 }
